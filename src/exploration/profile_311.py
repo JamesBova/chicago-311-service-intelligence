@@ -1,5 +1,6 @@
-import requests
 from collections import Counter
+
+import requests
 
 API_URL = "https://data.cityofchicago.org/resource/v6vf-nfxy.json"
 
@@ -35,11 +36,11 @@ for status, count in statuses.most_common():
 # Identify all fields appearing in the sample
 print("\nAvailable fields across all records:")
 
-fields = sorted({
+all_fields = sorted({
     field
     for record in records
-    for field in record.keys()
+    for field in record
 })
 
-for field in fields:
+for field in all_fields:
     print(field)
