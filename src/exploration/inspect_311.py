@@ -1,5 +1,6 @@
-import requests
 from pprint import pprint
+
+import requests
 
 # Chicago 311 Service Requests API
 API_URL = "https://data.cityofchicago.org/resource/v6vf-nfxy.json"

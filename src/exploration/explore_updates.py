@@ -1,5 +1,6 @@
-import requests
 from datetime import datetime, timedelta
+
+import requests
 
 API_URL = "https://data.cityofchicago.org/resource/v6vf-nfxy.json"
 
