@@ -1,0 +1,39 @@
+{
+    "Name":  "chicago311-ingestion-daily",
+    "GroupName":  "default",
+    "ScheduleExpression":  "cron(0 6 * * ? *)",
+    "ScheduleExpressionTimezone":  "America/Chicago",
+    "FlexibleTimeWindow":  {
+                               "Mode":  "OFF"
+                           },
+    "State":  "ENABLED",
+    "Target":  {
+                   "Arn":  "arn:aws:ecs:us-east-2:690260957255:cluster/chicago311-dev",
+                   "EcsParameters":  {
+                                         "LaunchType":  "FARGATE",
+                                         "NetworkConfiguration":  {
+                                                                      "awsvpcConfiguration":  {
+                                                                                                  "AssignPublicIp":  "ENABLED",
+                                                                                                  "SecurityGroups":  [
+                                                                                                                         "sg-020db663facf76ea6"
+                                                                                                                     ],
+                                                                                                  "Subnets":  [
+                                                                                                                  "subnet-00b6cf39b2ebb5a26",
+                                                                                                                  "subnet-0a936b218f433e179",
+                                                                                                                  "subnet-00c2489a7093c9352"
+                                                                                                              ]
+                                                                                              }
+                                                                  },
+                                         "PlatformVersion":  "LATEST",
+                                         "TaskCount":  1,
+                                         "TaskDefinitionArn":  "arn:aws:ecs:us-east-2:690260957255:task-definition/chicago311-ingestion-dev:2"
+                                     },
+                   "RetryPolicy":  {
+                                       "MaximumEventAgeInSeconds":  3600,
+                                       "MaximumRetryAttempts":  2
+                                   },
+                   "RoleArn":  "arn:aws:iam::690260957255:role/chicago311-scheduler-role"
+               },
+    "Description":  "Daily Chicago 311 ingestion at 6 AM Central",
+    "ActionAfterCompletion":  "NONE"
+}

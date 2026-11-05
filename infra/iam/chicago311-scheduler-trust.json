@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "scheduler.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "aws:SourceAccount": "690260957255",
+          "aws:SourceArn": "arn:aws:scheduler:us-east-2:690260957255:schedule-group/default"
+        }
+      }
+    }
+  ]
+}

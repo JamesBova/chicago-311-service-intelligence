@@ -1,0 +1,29 @@
+{
+    "Version":  "2012-10-17",
+    "Statement":  [
+                      {
+                          "Sid":  "ListProjectBucket",
+                          "Effect":  "Allow",
+                          "Action":  "s3:ListBucket",
+                          "Resource":  "arn:aws:s3:::james-chicago-311-service-intelligence"
+                      },
+                      {
+                          "Sid":  "UploadRawFiles",
+                          "Effect":  "Allow",
+                          "Action":  [
+                                         "s3:PutObject",
+                                         "s3:AbortMultipartUpload"
+                                     ],
+                          "Resource":  "arn:aws:s3:::james-chicago-311-service-intelligence/dev/raw/*"
+                      },
+                      {
+                          "Sid":  "ReadWriteCheckpoint",
+                          "Effect":  "Allow",
+                          "Action":  [
+                                         "s3:GetObject",
+                                         "s3:PutObject"
+                                     ],
+                          "Resource":  "arn:aws:s3:::james-chicago-311-service-intelligence/dev/state/checkpoint.json"
+                      }
+                  ]
+}

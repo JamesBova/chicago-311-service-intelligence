@@ -1,0 +1,39 @@
+
+-- Chicago 311 Service Intelligence
+-- Load raw JSONL records from S3 into Bronze.
+
+USE ROLE ACCOUNTADMIN;
+
+-- Load the original JSON records and source metadata.
+COPY INTO CHICAGO_311_DEV.BRONZE.SERVICE_REQUEST_RAW
+    (
+        RAW_RECORD,
+        SOURCE_FILE,
+        SOURCE_ROW_NUMBER
+    )
+FROM (
+    SELECT
+        $1,
+        METADATA$FILENAME,
+        METADATA$FILE_ROW_NUMBER
+    FROM @CHICAGO_311_DEV.BRONZE.S3_CHICAGO_311_STAGE
+)
+ON_ERROR = 'ABORT_STATEMENT';
+
+-- Verify the number of records loaded.
+SELECT
+    COUNT(*) AS TOTAL_RECORDS,
+    COUNT(DISTINCT RAW_RECORD:sr_number::VARCHAR)
+        AS DISTINCT_REQUESTS
+FROM CHICAGO_311_DEV.BRONZE.SERVICE_REQUEST_RAW;
+
+-- Inspect a few records.
+SELECT
+    RAW_RECORD:sr_number::VARCHAR AS SR_NUMBER,
+    RAW_RECORD:sr_type::VARCHAR AS SR_TYPE,
+    SOURCE_FILE,
+    SOURCE_ROW_NUMBER,
+    INGESTED_AT
+FROM CHICAGO_311_DEV.BRONZE.SERVICE_REQUEST_RAW
+LIMIT 5;
+

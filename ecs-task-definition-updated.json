@@ -1,0 +1,60 @@
+{
+    "family":  "chicago311-ingestion-dev",
+    "taskRoleArn":  "arn:aws:iam::690260957255:role/chicago311-ecs-task-role",
+    "executionRoleArn":  "arn:aws:iam::690260957255:role/chicago311-ecs-execution-role",
+    "networkMode":  "awsvpc",
+    "containerDefinitions":  [
+                                 {
+                                     "name":  "chicago311-ingestion",
+                                     "image":  "690260957255.dkr.ecr.us-east-2.amazonaws.com/chicago-311-ingestion@sha256:c525b0ef06993c1bea075e832fae17d660a869c1f18d9dcf2ac5fff4316b2d4b",
+                                     "cpu":  0,
+                                     "portMappings":  [
+
+                                                      ],
+                                     "essential":  true,
+                                     "command":  [
+                                                     "--initial-start",
+                                                     "2026-10-31T07:30:00",
+                                                     "--page-size",
+                                                     "200",
+                                                     "--s3-bucket",
+                                                     "james-chicago-311-service-intelligence"
+                                                 ],
+                                     "environment":  [
+
+                                                     ],
+                                     "mountPoints":  [
+
+                                                     ],
+                                     "volumesFrom":  [
+
+                                                     ],
+                                     "logConfiguration":  {
+                                                              "logDriver":  "awslogs",
+                                                              "options":  {
+                                                                              "awslogs-group":  "/ecs/chicago311-ingestion-dev",
+                                                                              "awslogs-region":  "us-east-2",
+                                                                              "awslogs-stream-prefix":  "ecs"
+                                                                          }
+                                                          },
+                                     "systemControls":  [
+
+                                                        ]
+                                 }
+                             ],
+    "volumes":  [
+
+                ],
+    "placementConstraints":  [
+
+                             ],
+    "requiresCompatibilities":  [
+                                    "FARGATE"
+                                ],
+    "cpu":  "256",
+    "memory":  "512",
+    "runtimePlatform":  {
+                            "cpuArchitecture":  "X86_64",
+                            "operatingSystemFamily":  "LINUX"
+                        }
+}
