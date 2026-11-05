@@ -8,7 +8,6 @@ import pytest
 
 from src.ingestion.s3_manifest import upload_manifest_to_s3
 
-
 BUCKET = "test-chicago-311"
 
 RAW_FILE_URI = (
