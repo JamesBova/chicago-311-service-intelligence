@@ -1,0 +1,14 @@
+{
+  "Rules": [
+    {
+      "ID": "ExpireChicago311RawAfter7Days",
+      "Filter": {
+        "Prefix": "dev/raw/"
+      },
+      "Status": "Enabled",
+      "Expiration": {
+        "Days": 7
+      }
+    }
+  ]
+}

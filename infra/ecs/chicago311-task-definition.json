@@ -1,0 +1,38 @@
+{
+  "family": "chicago311-ingestion-dev",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "arn:aws:iam::690260957255:role/chicago311-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::690260957255:role/chicago311-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "chicago311-ingestion",
+      "image": "690260957255.dkr.ecr.us-east-2.amazonaws.com/chicago-311-ingestion@sha256:c6a4e95b07ccedb1ba483e56f7fbbce4d49ab78911b01cc829fab4079bc3c198",
+      "essential": true,
+      "command": [
+        "--initial-start",
+        "2026-10-31T07:30:00",
+        "--page-size",
+        "200",
+        "--s3-bucket",
+        "james-chicago-311-service-intelligence"
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/chicago311-ingestion-dev",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

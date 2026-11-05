@@ -1,0 +1,34 @@
+
+# Python environment and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Git and editor files
+.git/
+.github/
+.vscode/
+.idea/
+
+# Local data and state
+data/
+*.jsonl
+
+# Environment files and credentials
+.env
+.env.*
+.aws/
+*.pem
+*.key
+
+# Tests and development tooling
+tests/
+requirements.txt
+
+# Documentation and miscellaneous
+*.md
+.DS_Store
