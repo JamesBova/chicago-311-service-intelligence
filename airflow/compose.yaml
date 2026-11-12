@@ -1,0 +1,174 @@
+# Chicago 311 - local distributed Airflow cluster, for production-architecture simulation.
+# Do not expose the API or Flower directly to the Internet.
+name: chicago311-airflow
+
+x-airflow-env: &airflow-env
+  AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+  AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+  AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:?Set AIRFLOW_FERNET_KEY in .env}
+  AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+  AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+  AIRFLOW__CORE__PARALLELISM: '8'
+  AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: '4'
+  AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/airflow
+  AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://airflow:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/airflow
+  AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+  AIRFLOW__CELERY__WORKER_CONCURRENCY: '2'
+  AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
+  AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:?Set AIRFLOW_JWT_SECRET in .env}
+  AIRFLOW__API_AUTH__JWT_ISSUER: chicago311-airflow
+  AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+
+x-airflow-common: &airflow-common
+  image: chicago311-airflow-dbt:3.3.0
+  user: '${AIRFLOW_UID:-50000}:0'
+  environment: *airflow-env
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./config:/opt/airflow/config
+    - ../dbt:/opt/airflow/dbt
+
+  restart: unless-stopped
+
+x-init-depends: &init-depends
+  postgres:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+  airflow-init:
+    condition: service_completed_successfully
+
+x-scheduler: &scheduler
+  <<: *airflow-common
+  command: scheduler
+  depends_on: *init-depends
+  healthcheck:
+    test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+    interval: 30s
+    timeout: 10s
+    retries: 5
+    start_period: 60s
+
+x-worker: &worker
+  <<: *airflow-common
+  command: celery worker
+  environment:
+    <<: *airflow-env
+    DUMB_INIT_SETSID: '0'
+  depends_on:
+    <<: *init-depends
+    airflow-api-server:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD-SHELL", 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"']
+    interval: 30s
+    timeout: 15s
+    retries: 5
+    start_period: 60s
+  stop_grace_period: 90s
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U airflow -d airflow']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.2-bookworm
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # One-shot initialization; existing metadata survives restarts in postgres-data.
+  airflow-init:
+    <<: *airflow-common
+    command: version
+    restart: 'no'
+    environment:
+      <<: *airflow-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER:-admin}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:?Set AIRFLOW_ADMIN_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  airflow-api-server:
+    <<: *airflow-common
+    command: api-server
+    ports:
+      - '127.0.0.1:8081:8080'
+    depends_on: *init-depends
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: dag-processor
+    depends_on: *init-depends
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  airflow-scheduler-1:
+    <<: *scheduler
+
+  airflow-scheduler-2:
+    <<: *scheduler
+
+  airflow-worker-1:
+    <<: *worker
+
+  airflow-worker-2:
+    <<: *worker
+
+  airflow-triggerer:
+    <<: *airflow-common
+    command: triggerer
+    depends_on: *init-depends
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  flower:
+    <<: *airflow-common
+    command: celery flower
+    profiles: [monitoring]
+    ports:
+      - '127.0.0.1:5555:5555'
+    depends_on: *init-depends
+
+volumes:
+  postgres-data:
+  redis-data:

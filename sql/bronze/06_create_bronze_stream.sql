@@ -1,0 +1,9 @@
+
+-- Chicago 311 Service Intelligence
+-- Capture newly ingested Bronze records for downstream processing.
+
+CREATE STREAM IF NOT EXISTS
+    CHICAGO_311_DEV.BRONZE.SERVICE_REQUEST_RAW_STREAM
+ON TABLE CHICAGO_311_DEV.BRONZE.SERVICE_REQUEST_RAW
+    APPEND_ONLY = TRUE
+    SHOW_INITIAL_ROWS = TRUE;

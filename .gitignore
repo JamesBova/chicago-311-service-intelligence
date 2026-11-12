@@ -1,3 +1,4 @@
+
 # Python virtual environment
 .venv/
 
@@ -20,9 +21,26 @@ __pycache__/
 # Raw and processed data
 data/raw/*
 !data/raw/.gitkeep
-
 data/processed/*
 !data/processed/.gitkeep
 
 # Local ingestion checkpoints and state
 data/state/
+
+# Airflow
+/airflow/logs/*
+!/airflow/logs/.gitkeep
+
+
+
+# Airflow local configuration
+/airflow/config/
+
+# dbt generated files
+/dbt/target/
+/dbt/logs/
+/dbt/dbt_packages/
+
+# Generated Snowflake Lambda deployment packages
+/snowflake-layer/
+/snowflake-layer.zip

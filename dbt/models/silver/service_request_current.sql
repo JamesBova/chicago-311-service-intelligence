@@ -1,0 +1,78 @@
+{{
+    config(
+        materialized='incremental',
+        incremental_strategy='merge',
+        unique_key='SR_NUMBER',
+        on_schema_change='fail',
+        tags=['chicago-311', 'silver']
+    )
+}}
+
+-- Current-state Silver: one record per sr_number.
+-- For now use the Lambda-validated staging table. Do NOT read/consume the
+-- live SERVICE_REQUEST_RAW_STREAM: Lambda already consumes that stream.
+-- Bronze history may contain multiple versions of the same request.
+-- The latest last_modified_date wins; ingestion metadata breaks ties.
+
+WITH typed_records AS (
+    SELECT
+        NULLIF(TRIM(RAW_RECORD:sr_number::VARCHAR), '') AS SR_NUMBER,
+        NULLIF(TRIM(RAW_RECORD:sr_type::VARCHAR), '') AS SR_TYPE,
+        NULLIF(TRIM(RAW_RECORD:sr_short_code::VARCHAR), '') AS SR_SHORT_CODE,
+        NULLIF(TRIM(RAW_RECORD:created_department::VARCHAR), '') AS CREATED_DEPARTMENT,
+        NULLIF(TRIM(RAW_RECORD:owner_department::VARCHAR), '') AS OWNER_DEPARTMENT,
+        NULLIF(TRIM(RAW_RECORD:status::VARCHAR), '') AS STATUS,
+        NULLIF(TRIM(RAW_RECORD:origin::VARCHAR), '') AS ORIGIN,
+
+        TRY_TO_TIMESTAMP_NTZ(RAW_RECORD:created_date::VARCHAR) AS CREATED_DATE,
+        TRY_TO_TIMESTAMP_NTZ(RAW_RECORD:last_modified_date::VARCHAR) AS LAST_MODIFIED_DATE,
+        TRY_TO_TIMESTAMP_NTZ(RAW_RECORD:closed_date::VARCHAR) AS CLOSED_DATE,
+
+        NULLIF(TRIM(RAW_RECORD:street_address::VARCHAR), '') AS STREET_ADDRESS,
+        NULLIF(TRIM(RAW_RECORD:city::VARCHAR), '') AS CITY,
+        NULLIF(TRIM(RAW_RECORD:state::VARCHAR), '') AS STATE,
+        NULLIF(TRIM(RAW_RECORD:zip_code::VARCHAR), '') AS ZIP_CODE,
+        TRY_CAST(RAW_RECORD:ward::VARCHAR AS NUMBER(5,0)) AS WARD,
+        TRY_CAST(RAW_RECORD:community_area::VARCHAR AS NUMBER(5,0)) AS COMMUNITY_AREA,
+        TRY_CAST(RAW_RECORD:police_district::VARCHAR AS NUMBER(5,0)) AS POLICE_DISTRICT,
+        TRY_TO_DOUBLE(RAW_RECORD:latitude::VARCHAR) AS LATITUDE,
+        TRY_TO_DOUBLE(RAW_RECORD:longitude::VARCHAR) AS LONGITUDE,
+
+        -- Field not present in the observed 311 JSON keys; preserve the column
+        -- from the approved Silver DDL until a verified mapping is available.
+        CAST(NULL AS VARCHAR(50)) AS PARENT_SR_NUMBER,
+        TRY_TO_BOOLEAN(RAW_RECORD:duplicate::VARCHAR) AS IS_DUPLICATE,
+        TRY_TO_BOOLEAN(RAW_RECORD:legacy_record::VARCHAR) AS IS_LEGACY_RECORD,
+
+        SOURCE_FILE,
+        SOURCE_ROW_NUMBER,
+        INGESTED_AT AS SOURCE_INGESTED_AT,
+        CURRENT_TIMESTAMP() AS SILVER_UPDATED_AT
+
+    FROM {{ source('chicago311_bronze', 'service_request_raw_stream') }}
+    WHERE METADATA$ACTION = 'INSERT'
+),
+
+latest_request AS (
+    SELECT *
+    FROM typed_records
+    WHERE SR_NUMBER IS NOT NULL
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY SR_NUMBER
+        ORDER BY
+            LAST_MODIFIED_DATE DESC NULLS LAST,
+            SOURCE_INGESTED_AT DESC NULLS LAST,
+            SOURCE_FILE DESC NULLS LAST,
+            SOURCE_ROW_NUMBER DESC NULLS LAST
+    ) = 1
+)
+
+SELECT
+    SR_NUMBER, SR_TYPE, SR_SHORT_CODE, CREATED_DEPARTMENT,
+    OWNER_DEPARTMENT, STATUS, ORIGIN,
+    CREATED_DATE, LAST_MODIFIED_DATE, CLOSED_DATE,
+    STREET_ADDRESS, CITY, STATE, ZIP_CODE, WARD, COMMUNITY_AREA,
+    POLICE_DISTRICT, LATITUDE, LONGITUDE, PARENT_SR_NUMBER,
+    IS_DUPLICATE, IS_LEGACY_RECORD,
+    SOURCE_FILE, SOURCE_ROW_NUMBER, SOURCE_INGESTED_AT, SILVER_UPDATED_AT
+FROM latest_request

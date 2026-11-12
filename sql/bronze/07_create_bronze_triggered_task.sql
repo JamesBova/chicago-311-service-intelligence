@@ -1,0 +1,20 @@
+-- Chicago 311 Service Intelligence
+-- Trigger processing when new Bronze records arrive.
+-- Limit executions to once every 5 minutes.
+-- Suspend after 6 consecutive failures.
+
+CREATE TASK IF NOT EXISTS
+    CHICAGO_311_DEV.BRONZE.SERVICE_REQUEST_PROCESS_TASK
+    TARGET_COMPLETION_INTERVAL = '5 MINUTES'
+    USER_TASK_MINIMUM_TRIGGER_INTERVAL_IN_SECONDS = 300
+    SUSPEND_TASK_AFTER_NUM_FAILURES = 6
+    TASK_AUTO_RETRY_ATTEMPTS = 0
+    WHEN SYSTEM$STREAM_HAS_DATA(
+        'CHICAGO_311_DEV.BRONZE.SERVICE_REQUEST_RAW_STREAM'
+    )
+AS
+    CALL CHICAGO_311_DEV.BRONZE.VALIDATE_MANIFEST();
+
+--default is disabled.  Enable when you are ready
+    ALTER TASK CHICAGO_311_DEV.BRONZE.SERVICE_REQUEST_PROCESS_TASK
+RESUME;

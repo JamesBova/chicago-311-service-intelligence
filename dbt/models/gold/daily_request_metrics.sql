@@ -1,0 +1,70 @@
+{{
+    config(
+        materialized='incremental',
+        incremental_strategy='merge',
+        unique_key=[
+            'METRIC_DATE',
+            'SERVICE_TYPE_KEY',
+            'GEOGRAPHY_KEY'
+        ],
+        on_schema_change='fail',
+        tags=['chicago-311', 'gold']
+    )
+}}
+
+WITH daily_activity AS (
+
+    -- Requests created on each date.
+    SELECT
+        CAST(CREATED_DATE AS DATE) AS METRIC_DATE,
+        SERVICE_TYPE_KEY,
+        GEOGRAPHY_KEY,
+        1 AS CREATED_REQUESTS,
+        0 AS CLOSED_REQUESTS,
+        CAST(NULL AS NUMBER(18,2)) AS CLOSED_RESOLUTION_HOURS
+    FROM {{ ref('fact_service_request') }}
+    WHERE CREATED_DATE IS NOT NULL
+      AND SERVICE_TYPE_KEY IS NOT NULL
+      AND GEOGRAPHY_KEY IS NOT NULL
+
+    UNION ALL
+
+    -- Requests closed on each date.
+    SELECT
+        CAST(CLOSED_DATE AS DATE) AS METRIC_DATE,
+        SERVICE_TYPE_KEY,
+        GEOGRAPHY_KEY,
+        0 AS CREATED_REQUESTS,
+        1 AS CLOSED_REQUESTS,
+        RESOLUTION_HOURS AS CLOSED_RESOLUTION_HOURS
+    FROM {{ ref('fact_service_request') }}
+    WHERE CLOSED_DATE IS NOT NULL
+      AND SERVICE_TYPE_KEY IS NOT NULL
+      AND GEOGRAPHY_KEY IS NOT NULL
+
+)
+
+SELECT
+    METRIC_DATE,
+    CAST(SERVICE_TYPE_KEY AS VARCHAR(64)) AS SERVICE_TYPE_KEY,
+    CAST(GEOGRAPHY_KEY AS VARCHAR(64)) AS GEOGRAPHY_KEY,
+
+    CAST(SUM(CREATED_REQUESTS) AS NUMBER(38,0))
+        AS CREATED_REQUESTS,
+
+    CAST(SUM(CLOSED_REQUESTS) AS NUMBER(38,0))
+        AS CLOSED_REQUESTS,
+
+    CAST(
+        ROUND(AVG(CLOSED_RESOLUTION_HOURS), 2)
+        AS NUMBER(18,2)
+    ) AS AVG_CLOSED_RESOLUTION_HOURS,
+
+    CAST(CURRENT_TIMESTAMP() AS TIMESTAMP_LTZ)
+        AS LAST_REFRESHED_AT
+
+FROM daily_activity
+GROUP BY
+    METRIC_DATE,
+    SERVICE_TYPE_KEY,
+    GEOGRAPHY_KEY

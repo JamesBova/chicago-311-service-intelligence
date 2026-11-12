@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: fact_service_request
+    columns:
+      - name: SR_NUMBER
+        data_tests:
+          - unique
+          - not_null
+
+      - name: SERVICE_TYPE_KEY
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_service_type')
+                field: SERVICE_TYPE_KEY
+
+      - name: GEOGRAPHY_KEY
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_geography')
+                field: GEOGRAPHY_KEY
+
+      - name: CREATED_DATE_KEY
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: DATE_KEY
+
+      - name: CLOSED_DATE_KEY
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: DATE_KEY
+
+  - name: dim_service_type
+    columns:
+      - name: SERVICE_TYPE_KEY
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_geography
+    columns:
+      - name: GEOGRAPHY_KEY
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_date
+    columns:
+      - name: DATE_KEY
+        data_tests:
+          - unique
+          - not_null

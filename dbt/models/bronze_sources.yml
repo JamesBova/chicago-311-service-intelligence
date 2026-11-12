@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: chicago311_bronze
+    description: Bronze change stream consumed by dbt Silver.
+    database: CHICAGO_311_DEV
+    schema: BRONZE
+    tables:
+      - name: service_request_raw_stream
+        identifier: SERVICE_REQUEST_RAW_STREAM
+        description: New Bronze records awaiting processing.

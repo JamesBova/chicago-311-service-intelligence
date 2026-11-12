@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: service_request_current
+    description: Latest known version of each Chicago 311 service request, derived from Lambda-validated Bronze records.
+    columns:
+      - name: SR_NUMBER
+        description: Unique service-request business key.
+        data_tests:
+          - not_null
+          - unique
+      - name: CREATED_DATE
+        description: Source-provided creation timestamp; may be null for malformed records.
+      - name: LAST_MODIFIED_DATE
+        description: Source-provided last modified timestamp used to select the current version.
