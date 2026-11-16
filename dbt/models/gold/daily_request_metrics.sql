@@ -1,16 +1,11 @@
+
 {{
     config(
-        materialized='incremental',
-        incremental_strategy='merge',
-        unique_key=[
-            'METRIC_DATE',
-            'SERVICE_TYPE_KEY',
-            'GEOGRAPHY_KEY'
-        ],
-        on_schema_change='fail',
+        materialized='table',
         tags=['chicago-311', 'gold']
     )
 }}
+
 
 WITH daily_activity AS (
 
