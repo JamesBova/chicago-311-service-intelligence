@@ -1,0 +1,82 @@
+table DAILY_REQUEST_METRICS
+	lineageTag: ab4c64ca-7e8f-4b03-bba8-53e2528ef451
+
+	column METRIC_DATE
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: cade7db8-0866-48a8-aad1-aaa61f40ea52
+		summarizeBy: none
+		sourceColumn: METRIC_DATE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column SERVICE_TYPE_KEY
+		dataType: string
+		lineageTag: bd0d8bc4-975c-4db8-bdb6-6708aa669ed0
+		summarizeBy: none
+		sourceColumn: SERVICE_TYPE_KEY
+
+		annotation SummarizationSetBy = Automatic
+
+	column GEOGRAPHY_KEY
+		dataType: string
+		lineageTag: 4827d61e-8625-4898-9cc5-20d6e57c12c5
+		summarizeBy: none
+		sourceColumn: GEOGRAPHY_KEY
+
+		annotation SummarizationSetBy = Automatic
+
+	column CREATED_REQUESTS
+		dataType: double
+		lineageTag: dc35fb28-8c74-47fe-8fd9-020f1ad1e114
+		summarizeBy: sum
+		sourceColumn: CREATED_REQUESTS
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column CLOSED_REQUESTS
+		dataType: double
+		lineageTag: b5f74757-19df-44ab-930b-81a997915e44
+		summarizeBy: sum
+		sourceColumn: CLOSED_REQUESTS
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column AVG_CLOSED_RESOLUTION_HOURS
+		dataType: double
+		lineageTag: 9aa9d9c6-4b77-46c9-8297-2ea8d58689f4
+		summarizeBy: sum
+		sourceColumn: AVG_CLOSED_RESOLUTION_HOURS
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column LAST_REFRESHED_AT
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 79110989-5ead-4fed-9df5-a846caf50dba
+		summarizeBy: none
+		sourceColumn: LAST_REFRESHED_AT
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DAILY_REQUEST_METRICS = m
+		mode: import
+		source =
+				let
+				    Source = Snowflake.Databases("SHNAKGL-RV38790.snowflakecomputing.com","DE_PORTFOLIO_WH",[Implementation="2.0"]),
+				    CHICAGO_311_DEV_Database = Source{[Name="CHICAGO_311_DEV",Kind="Database"]}[Data],
+				    GOLD_Schema = CHICAGO_311_DEV_Database{[Name="GOLD",Kind="Schema"]}[Data],
+				    DAILY_REQUEST_METRICS_Table = GOLD_Schema{[Name="DAILY_REQUEST_METRICS",Kind="Table"]}[Data]
+				in
+				    DAILY_REQUEST_METRICS_Table
+
+	annotation PBI_ResultType = Table
+

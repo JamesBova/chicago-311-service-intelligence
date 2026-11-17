@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Chicago311"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "e33ff5fa-e3f0-443f-9341-5b51bcbf2040"
+  }
+}

@@ -1,0 +1,16 @@
+relationship AutoDetected_2de2030e-da12-479e-b699-9d9a9baf6ed9
+	fromColumn: DAILY_REQUEST_METRICS.SERVICE_TYPE_KEY
+	toColumn: DIM_SERVICE_TYPE.SERVICE_TYPE_KEY
+
+relationship AutoDetected_4cc11594-bebe-482a-bdd7-d3d8340c92ab
+	fromColumn: FACT_SERVICE_REQUEST.SERVICE_TYPE_KEY
+	toColumn: DIM_SERVICE_TYPE.SERVICE_TYPE_KEY
+
+relationship AutoDetected_8736a148-4e25-4d61-aec4-9bf428bcdbe2
+	fromColumn: DAILY_REQUEST_METRICS.GEOGRAPHY_KEY
+	toColumn: DIM_GEOGRAPHY.GEOGRAPHY_KEY
+
+relationship AutoDetected_75b0c136-896b-4f1b-ad1e-2406d0b0e640
+	fromColumn: FACT_SERVICE_REQUEST.GEOGRAPHY_KEY
+	toColumn: DIM_GEOGRAPHY.GEOGRAPHY_KEY
+

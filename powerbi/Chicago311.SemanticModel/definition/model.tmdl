@@ -1,0 +1,23 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["DAILY_REQUEST_METRICS","DIM_GEOGRAPHY","DIM_DATE","DIM_SERVICE_TYPE","FACT_SERVICE_REQUEST"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table DAILY_REQUEST_METRICS
+ref table DIM_GEOGRAPHY
+ref table DIM_DATE
+ref table DIM_SERVICE_TYPE
+ref table FACT_SERVICE_REQUEST
+
+ref cultureInfo en-US
+
