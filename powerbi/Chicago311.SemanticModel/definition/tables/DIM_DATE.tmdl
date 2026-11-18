@@ -4,7 +4,7 @@ table DIM_DATE
 	column DATE_KEY
 		dataType: double
 		lineageTag: bda02800-cc3c-4fe9-ab9a-89d011a7dd2d
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: DATE_KEY
 
 		annotation SummarizationSetBy = Automatic

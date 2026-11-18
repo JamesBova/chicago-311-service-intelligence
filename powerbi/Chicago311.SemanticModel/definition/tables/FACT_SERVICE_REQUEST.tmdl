@@ -28,7 +28,7 @@ table FACT_SERVICE_REQUEST
 	column CREATED_DATE_KEY
 		dataType: double
 		lineageTag: cc6c4303-47d6-4eae-97bd-76f8e169691b
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: CREATED_DATE_KEY
 
 		annotation SummarizationSetBy = Automatic
