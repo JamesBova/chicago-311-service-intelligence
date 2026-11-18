@@ -18,3 +18,14 @@ models:
       +schema: SILVER
     gold:
       +schema: GOLD
+# Reference data loaded into Snowflake GOLD
+seed-paths:
+  - seeds
+
+seeds:
+  chicago_311:
+    +schema: GOLD
+    community_areas:
+      +column_types:
+        community_area: integer
+        community_area_name: varchar(100)
