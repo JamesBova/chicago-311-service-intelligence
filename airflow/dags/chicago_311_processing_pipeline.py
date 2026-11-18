@@ -221,6 +221,60 @@ def _run_dbt_layer(layer: str) -> None:
                     f"{DATABASE}.{layer.upper()}. Fix schema mapping first."
                 )
         LOG.info("Validated %d dbt %s model destinations", len(nodes), layer)
+
+        if layer == "gold":
+            seed_output = _run_command(
+                [
+                    "dbt", "ls", *common,
+                    "--select", "community_areas",
+                    "--resource-type", "seed",
+                    "--output", "json",
+                ],
+                env,
+                timeout=300,
+            )
+
+            seed_nodes = []
+            for line in seed_output.splitlines():
+                if line.strip().startswith("{"):
+                    try:
+                        node = json.loads(line)
+                        if node.get("resource_type") == "seed":
+                            seed_nodes.append(node)
+                    except json.JSONDecodeError:
+                        continue
+
+            if (
+                len(seed_nodes) != 1
+                or str(seed_nodes[0].get("database", "")).upper() != DATABASE
+                or str(seed_nodes[0].get("schema", "")).upper() != "GOLD"
+            ):
+                raise RuntimeError(
+                    "Community areas seed must target the expected GOLD schema"
+                )
+
+            _run_command(
+                ["dbt", "seed", *common, "--select", "community_areas"],
+                env,
+                timeout=600,
+            )
+
+            import csv
+
+            seed_file = DBT_DIR / "seeds" / "community_areas.csv"
+            with seed_file.open(encoding="utf-8-sig", newline="") as fp:
+                expected_count = sum(1 for _ in csv.DictReader(fp))
+
+            actual_count = _count_rows(f"{DATABASE}.GOLD.COMMUNITY_AREAS")
+            if expected_count == 0 or actual_count != expected_count:
+                raise RuntimeError(
+                    f"Community areas seed count mismatch: "
+                    f"expected {expected_count}, found {actual_count}"
+                )
+
+            LOG.info("Community areas seed verified: %s rows", actual_count)
+
+
         build_output = _run_command(
             ["dbt", "build", *common, "--select", select],
             env,
