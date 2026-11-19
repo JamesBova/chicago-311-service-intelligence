@@ -229,6 +229,7 @@ def _run_dbt_layer(layer: str) -> None:
                     "--select", "community_areas",
                     "--resource-type", "seed",
                     "--output", "json",
+                    "--output-keys", "name", "resource_type", "database", "schema",
                 ],
                 env,
                 timeout=300,
