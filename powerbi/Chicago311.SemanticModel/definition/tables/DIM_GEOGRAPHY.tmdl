@@ -1,0 +1,71 @@
+table DIM_GEOGRAPHY
+	lineageTag: 4d49a05a-40d1-4113-a90e-121c3d8acaf9
+
+	column GEOGRAPHY_KEY
+		dataType: string
+		lineageTag: fb8a2292-00fd-497e-876b-ed7eb272021b
+		summarizeBy: none
+		sourceColumn: GEOGRAPHY_KEY
+
+		annotation SummarizationSetBy = Automatic
+
+	column COMMUNITY_AREA
+		dataType: double
+		lineageTag: 26dc6dec-9be0-4881-9255-cd30880b535f
+		summarizeBy: sum
+		sourceColumn: COMMUNITY_AREA
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column WARD
+		dataType: double
+		lineageTag: 1376eb83-4e27-4e3a-97ff-425cee1f29e4
+		summarizeBy: sum
+		sourceColumn: WARD
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column POLICE_DISTRICT
+		dataType: double
+		lineageTag: 9103b05e-87e5-4777-8754-5dfea92df47d
+		summarizeBy: sum
+		sourceColumn: POLICE_DISTRICT
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ZIP_CODE
+		dataType: string
+		lineageTag: 2ed02ff0-ff81-4140-b371-e77917be4c74
+		summarizeBy: none
+		sourceColumn: ZIP_CODE
+
+		annotation SummarizationSetBy = Automatic
+
+	column LAST_REFRESHED_AT
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: e20e6126-207c-4a09-a423-a0a950c91319
+		summarizeBy: none
+		sourceColumn: LAST_REFRESHED_AT
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DIM_GEOGRAPHY = m
+		mode: import
+		source =
+				let
+				    Source = Snowflake.Databases("SHNAKGL-RV38790.snowflakecomputing.com","DE_PORTFOLIO_WH",[Implementation="2.0"]),
+				    CHICAGO_311_DEV_Database = Source{[Name="CHICAGO_311_DEV",Kind="Database"]}[Data],
+				    GOLD_Schema = CHICAGO_311_DEV_Database{[Name="GOLD",Kind="Schema"]}[Data],
+				    DIM_GEOGRAPHY_Table = GOLD_Schema{[Name="DIM_GEOGRAPHY",Kind="Table"]}[Data]
+				in
+				    DIM_GEOGRAPHY_Table
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,49 @@
+table DIM_SERVICE_TYPE
+	lineageTag: 249c83a9-936b-4af1-a9ac-07795ec8614b
+
+	column SERVICE_TYPE_KEY
+		dataType: string
+		lineageTag: 8c76ec40-3eba-48f9-8811-99d1744e0758
+		summarizeBy: none
+		sourceColumn: SERVICE_TYPE_KEY
+
+		annotation SummarizationSetBy = Automatic
+
+	column SR_SHORT_CODE
+		dataType: string
+		lineageTag: d68e86e9-1eac-4977-93f0-ffacab918d9e
+		summarizeBy: none
+		sourceColumn: SR_SHORT_CODE
+
+		annotation SummarizationSetBy = Automatic
+
+	column SR_TYPE
+		dataType: string
+		lineageTag: 0e08d092-158f-49ba-ad23-050f1e9b10aa
+		summarizeBy: none
+		sourceColumn: SR_TYPE
+
+		annotation SummarizationSetBy = Automatic
+
+	column LAST_REFRESHED_AT
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: afcc6872-8f5e-4242-80bc-f087d891dbf7
+		summarizeBy: none
+		sourceColumn: LAST_REFRESHED_AT
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DIM_SERVICE_TYPE = m
+		mode: import
+		source =
+				let
+				    Source = Snowflake.Databases("SHNAKGL-RV38790.snowflakecomputing.com","DE_PORTFOLIO_WH",[Implementation="2.0"]),
+				    CHICAGO_311_DEV_Database = Source{[Name="CHICAGO_311_DEV",Kind="Database"]}[Data],
+				    GOLD_Schema = CHICAGO_311_DEV_Database{[Name="GOLD",Kind="Schema"]}[Data],
+				    DIM_SERVICE_TYPE_Table = GOLD_Schema{[Name="DIM_SERVICE_TYPE",Kind="Table"]}[Data]
+				in
+				    DIM_SERVICE_TYPE_Table
+
+	annotation PBI_ResultType = Table
+

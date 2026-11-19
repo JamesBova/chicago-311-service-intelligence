@@ -44,3 +44,7 @@ data/state/
 # Generated Snowflake Lambda deployment packages
 /snowflake-layer/
 /snowflake-layer.zip
+
+
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
