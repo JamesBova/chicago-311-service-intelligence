@@ -1,18 +1,14 @@
+
 {{
     config(
-        materialized='incremental',
-        incremental_strategy='merge',
-        unique_key='SR_NUMBER',
-        on_schema_change='fail',
+        materialized='table',
         tags=['chicago-311', 'silver']
     )
 }}
 
--- Current-state Silver: one record per sr_number.
--- For now use the Lambda-validated staging table. Do NOT read/consume the
--- live SERVICE_REQUEST_RAW_STREAM: Lambda already consumes that stream.
--- Bronze history may contain multiple versions of the same request.
--- The latest last_modified_date wins; ingestion metadata breaks ties.
+-- Current processing batch: one record per SR_NUMBER.
+-- Lambda triggers Step Functions, which starts Airflow.
+-- Airflow runs dbt to consume the Bronze stream into Silver.
 
 WITH typed_records AS (
     SELECT
@@ -23,11 +19,9 @@ WITH typed_records AS (
         NULLIF(TRIM(RAW_RECORD:owner_department::VARCHAR), '') AS OWNER_DEPARTMENT,
         NULLIF(TRIM(RAW_RECORD:status::VARCHAR), '') AS STATUS,
         NULLIF(TRIM(RAW_RECORD:origin::VARCHAR), '') AS ORIGIN,
-
         TRY_TO_TIMESTAMP_NTZ(RAW_RECORD:created_date::VARCHAR) AS CREATED_DATE,
         TRY_TO_TIMESTAMP_NTZ(RAW_RECORD:last_modified_date::VARCHAR) AS LAST_MODIFIED_DATE,
         TRY_TO_TIMESTAMP_NTZ(RAW_RECORD:closed_date::VARCHAR) AS CLOSED_DATE,
-
         NULLIF(TRIM(RAW_RECORD:street_address::VARCHAR), '') AS STREET_ADDRESS,
         NULLIF(TRIM(RAW_RECORD:city::VARCHAR), '') AS CITY,
         NULLIF(TRIM(RAW_RECORD:state::VARCHAR), '') AS STATE,
@@ -37,22 +31,16 @@ WITH typed_records AS (
         TRY_CAST(RAW_RECORD:police_district::VARCHAR AS NUMBER(5,0)) AS POLICE_DISTRICT,
         TRY_TO_DOUBLE(RAW_RECORD:latitude::VARCHAR) AS LATITUDE,
         TRY_TO_DOUBLE(RAW_RECORD:longitude::VARCHAR) AS LONGITUDE,
-
-        -- Field not present in the observed 311 JSON keys; preserve the column
-        -- from the approved Silver DDL until a verified mapping is available.
         CAST(NULL AS VARCHAR(50)) AS PARENT_SR_NUMBER,
         TRY_TO_BOOLEAN(RAW_RECORD:duplicate::VARCHAR) AS IS_DUPLICATE,
         TRY_TO_BOOLEAN(RAW_RECORD:legacy_record::VARCHAR) AS IS_LEGACY_RECORD,
-
         SOURCE_FILE,
         SOURCE_ROW_NUMBER,
         INGESTED_AT AS SOURCE_INGESTED_AT,
         CURRENT_TIMESTAMP() AS SILVER_UPDATED_AT
-
     FROM {{ source('chicago311_bronze', 'service_request_raw_stream') }}
     WHERE METADATA$ACTION = 'INSERT'
 ),
-
 latest_request AS (
     SELECT *
     FROM typed_records
@@ -66,7 +54,6 @@ latest_request AS (
             SOURCE_ROW_NUMBER DESC NULLS LAST
     ) = 1
 )
-
 SELECT
     SR_NUMBER, SR_TYPE, SR_SHORT_CODE, CREATED_DEPARTMENT,
     OWNER_DEPARTMENT, STATUS, ORIGIN,
