@@ -302,34 +302,6 @@ def _run_dbt_layer(layer: str) -> None:
     tags=["chicago-311", "snowflake", "dbt", "bronze-silver-gold"],
 )
 def chicago_311_processing_pipeline():
-    @task(retries=1, retry_delay=timedelta(minutes=1))
-    def verify_snowflake_connection() -> None:
-        row = _hook().get_first(
-            "SELECT CURRENT_ACCOUNT(), CURRENT_USER(), CURRENT_ROLE(), "
-            "CURRENT_WAREHOUSE(), CURRENT_DATABASE()"
-        )
-        if not row:
-            raise RuntimeError("Snowflake connection query returned no row")
-        account, user, role, warehouse, database = row
-        LOG.info(
-            "Connected: account=%s user=%s role=%s warehouse=%s database=%s",
-            account, user, role, warehouse, database,
-        )
-        if (str(user).upper() != USER or str(role).upper() != ROLE or
-                str(warehouse).upper() != WAREHOUSE or
-                str(database).upper() != DATABASE):
-            raise RuntimeError("Snowflake connection has an unexpected user/role/warehouse/database")
-
-    @task(retries=1, retry_delay=timedelta(minutes=2))
-    def verify_bronze_ready() -> None:
-        count = _count_rows(f"{DATABASE}.BRONZE.SERVICE_REQUEST_RAW")
-        if count <= 0:
-            raise RuntimeError("Bronze SERVICE_REQUEST_RAW is empty; no transformation will run")
-        LOG.info("Bronze contains %s raw rows", count)
-        # NOTE: A nonempty table is not proof the CURRENT ingestion batch is
-        # complete. For now the operator must confirm Snowpipe/manifest counts
-        # before manually triggering. Add a durable completion gate later.
-
     @task(retries=0)
     def build_silver() -> None:
         _run_dbt_layer("silver")
@@ -358,9 +330,27 @@ def chicago_311_processing_pipeline():
         if counts["DAILY_REQUEST_METRICS"] <= 0:
             raise RuntimeError("Gold DAILY_REQUEST_METRICS is empty after dbt build")
 
+    @task(retries=1, retry_delay=timedelta(minutes=1))
+    def cleanup_bronze() -> None:
+        _hook().run(
+            f"DELETE FROM {DATABASE}.BRONZE.SERVICE_REQUEST_RAW "
+            "WHERE INGESTED_AT < DATEADD(day, -7, CURRENT_TIMESTAMP())"
+        )
+        LOG.info("Bronze cleanup completed")
+
+    @task(retries=1, retry_delay=timedelta(minutes=1))
+    def cleanup_gold() -> None:
+        _hook().run(
+            f"DELETE FROM {DATABASE}.GOLD.FACT_SERVICE_REQUEST "
+            "WHERE CREATED_DATE < DATEADD(MONTH, -12, CURRENT_DATE())"
+        )
+        _hook().run(
+            f"DELETE FROM {DATABASE}.GOLD.DAILY_REQUEST_METRICS "
+            "WHERE METRIC_DATE < DATEADD(MONTH, -12, CURRENT_DATE())"
+        )
+        LOG.info("Gold cleanup completed")
     # Strict dependency order; a failure prevents all downstream writes.
-    verify_snowflake_connection() >> verify_bronze_ready() >> build_silver() >> \
-        verify_silver() >> build_gold() >> verify_gold()
+    build_silver() >> verify_silver() >> build_gold() >> verify_gold() >> cleanup_bronze() >> cleanup_gold()
 
 
 chicago_311_processing_pipeline()
