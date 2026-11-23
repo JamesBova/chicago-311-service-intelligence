@@ -70,6 +70,13 @@ The `chicago_311_processing_pipeline` DAG manages dbt transformations, validatio
 
 The validation tasks separate **building** a layer from **checking** its output. Cleanup is positioned after transformation and verification in the documented workflow.
 
+## Analytics Dashboard
+
+The Gold-layer data is consumed by Power BI to
+visualize Chicago 311 service request activity.
+
+![Chicago 311 Power BI Dashboard](assets/PowerBIDashboard.png)
+
 ## Data model: Bronze, Silver, and Gold
 
 | Layer | Purpose | Principal objects |
@@ -143,7 +150,7 @@ This is a **portfolio data platform**, not a claim of a fully hardened productio
 
 ## Further improvements
 
-Potential follow-on work includes automated deployment documentation, reproducible infrastructure provisioning, more extensive dbt tests, failure/retry scenarios, centralized monitoring, and a BI dashboard built on Gold metrics. These are improvement opportunities, **not features represented as already completed**.
+Potential follow-on work includes automated deployment documentation, reproducible infrastructure provisioning, more extensive dbt tests, failure/retry scenarios, and centralized monitoring. These are improvement opportunities, **not features represented as already completed**.
 
 ## Data source
 
@@ -152,4 +159,5 @@ Public Chicago 311 service requests are published through the [City of Chicago O
 ## Project scope
 
 This repository is intended to demonstrate the design and operation of a complete cloud data pipeline: ingesting a public API, using event notifications to load and validate data, orchestrating warehouse transformations, creating dimensional analytical outputs, and managing storage and compute costs.
+
 
