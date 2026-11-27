@@ -161,3 +161,10 @@ Public Chicago 311 service requests are published through the [City of Chicago O
 This repository is intended to demonstrate the design and operation of a complete cloud data pipeline: ingesting a public API, using event notifications to load and validate data, orchestrating warehouse transformations, creating dimensional analytical outputs, and managing storage and compute costs.
 
 
+## Data Source and Disclaimer
+
+Data is sourced from the City of Chicago Data Portal.
+
+This is an independent portfolio project and is not affiliated with or endorsed by the City of Chicago.
+
+This site provides applications using data that has been modified for use from its original source, www.cityofchicago.org, the official website of the City of Chicago. The City of Chicago makes no claims as to the content, accuracy, timeliness, or completeness of any of the data provided at this site. The data provided at this site is subject to change at any time. It is understood that the data provided at this site is being used at one’s own risk.
