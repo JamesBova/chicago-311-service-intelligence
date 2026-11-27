@@ -48,3 +48,15 @@ data/state/
 
 **/.pbi/localSettings.json
 **/.pbi/cache.abf
+
+# Private keys and certificates
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.ppk
+
+# Local dbt credentials
+profiles.yml
+.dbt/
