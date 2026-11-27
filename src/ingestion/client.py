@@ -1,12 +1,13 @@
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any
 
 import requests
 
+logger = logging.getLogger(__name__)
 
 API_URL = "https://data.cityofchicago.org/resource/v6vf-nfxy.json"
 REQUEST_TIMEOUT = 30
@@ -36,11 +37,11 @@ def get_retry_delay(
         retry_date = parsedate_to_datetime(retry_after)
 
         if retry_date.tzinfo is None:
-            retry_date = retry_date.replace(tzinfo=timezone.utc)
+            retry_date = retry_date.replace(tzinfo=UTC)
 
         return max(
             0.0,
-            (retry_date - datetime.now(timezone.utc)).total_seconds(),
+            (retry_date - datetime.now(UTC)).total_seconds(),
         )
 
     except (ValueError, TypeError, OverflowError):
@@ -67,7 +68,7 @@ def fetch_records(
         ) as exc:
 
             if attempt == MAX_ATTEMPTS:
-                logging.error(
+                logger.error(
                     "Chicago API failed after %s attempts: %s",
                     MAX_ATTEMPTS,
                     exc,
@@ -76,7 +77,7 @@ def fetch_records(
 
             delay = RETRY_DELAYS[attempt - 1]
 
-            logging.warning(
+            logger.warning(
                 "Chicago API connection failed: %s. "
                 "Attempt %s/%s. Retrying in %.0f seconds.",
                 exc,
@@ -97,7 +98,7 @@ def fetch_records(
                 RETRY_DELAYS[attempt - 1],
             )
 
-            logging.warning(
+            logger.warning(
                 "Chicago API returned HTTP %s. "
                 "Attempt %s/%s. Retrying in %.0f seconds.",
                 response.status_code,

@@ -1,4 +1,3 @@
-
 from unittest.mock import Mock
 
 import pytest
@@ -11,6 +10,8 @@ def test_fetch_records_success():
     # Simulate a successful API response.
     session = Mock(spec=requests.Session)
     response = Mock(spec=requests.Response)
+    response.status_code = 200
+    response.headers = {}
 
     expected_records = [
         {"sr_number": "SR001", "status": "Open"},
@@ -21,11 +22,9 @@ def test_fetch_records_success():
     session.get.return_value = response
 
     params = {"$limit": 2}
-
     records = fetch_records(session, params)
 
     assert records == expected_records
-
     session.get.assert_called_once_with(
         API_URL,
         params=params,
@@ -34,10 +33,18 @@ def test_fetch_records_success():
     response.raise_for_status.assert_called_once()
 
 
-def test_fetch_records_http_error():
+def test_fetch_records_http_error(monkeypatch):
+    # Prevent actual waiting between retry attempts.
+    monkeypatch.setattr(
+        "src.ingestion.client.time.sleep",
+        lambda _: None,
+    )
+
     # Simulate an HTTP error from the API.
     session = Mock(spec=requests.Session)
     response = Mock(spec=requests.Response)
+    response.status_code = 500
+    response.headers = {}
 
     response.raise_for_status.side_effect = requests.HTTPError(
         "500 Server Error"
@@ -52,6 +59,8 @@ def test_fetch_records_invalid_response():
     # Simulate an unexpected JSON response type.
     session = Mock(spec=requests.Session)
     response = Mock(spec=requests.Response)
+    response.status_code = 200
+    response.headers = {}
 
     response.json.return_value = {"error": "Unexpected response"}
     session.get.return_value = response
